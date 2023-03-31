@@ -14,6 +14,10 @@ public class Main {
     public static void main(String[] args) throws IOException, AgentLoadException, AgentInitializationException, AttachNotSupportedException {
         //Get all running virtual machines in the current system
         System.out.println("CLAgent start...");
+        if (null == args || args.length == 0) {
+            System.out.println("Use it as follows: java -jar clagent-17.0.0.jar attach YOUR.PACKAGE.MAIN /PATH/TO/YOUR/JAR/YOUR_AWESOME.JAR");
+            System.exit(0);
+        }
         String                         option = args[0];
         List<VirtualMachineDescriptor> list   = VirtualMachine.list();
         if (option.equals("list")) {
