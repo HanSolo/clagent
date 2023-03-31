@@ -1,0 +1,83 @@
+import java.text.SimpleDateFormat
+
+plugins {
+    id 'java-library'
+    id 'application'
+    id 'net.nemerosa.versioning' version '3.0.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+description = 'Class Loading Agent'
+
+Date buildTimeAndDate = new Date()
+ext {
+    buildDate = new SimpleDateFormat('yyyy-MM.dd').format(buildTimeAndDate)
+    buildTime = new SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
+}
+
+application {
+    mainModule = 'eu.hansolo.clagent'
+    mainClass  = 'eu.hansolo.clagent.Main'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+}
+
+compileJava {
+    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
+}
+
+jar {
+    manifest {
+        attributes(
+                'Manifest-Version'       : 1.0,
+                'Build-By'               : System.properties['user.name'],
+                'Created-By'             : System.properties['java.version'] + " (" + System.properties['java.vendor'] + "  " + System.properties['java.vm.version'] + ")",
+                'Build-Date'             : project.buildDate,
+                'Build-Time'             : project.buildTime,
+                'Build-Revision'         : versioning.info.commit,
+                'Specification-Title'    : project.name,
+                'Specification-Version'  : project.version,
+                'Implementation-Title'   : project.name,
+                'Implementation-Version' : project.version,
+                'Bundle-Name'            : project.name,
+                'Bundle-License'         : 'https://www.apache.org/licenses/LICENSE-2.0;description=Apache License Version 2.0;link=https://spdx.org/licenses/Apache-2.0.html',
+                'Bundle-Description'     : description,
+                'Bundle-SymbolicName'    : 'eu.hansolo.clagent',
+                'Class-Path'             : '${project.name}-${project.version}.jar',
+                'Can-Redefine-Classes'   : true,
+                'Can-Retransform-Classes': true,
+                'Agent-Class'            : 'eu.hansolo.clagent.Main',
+                'Premain-Class'          : 'eu.hansolo.clagent.Main',
+                'Main-Class'             : application.mainClass.get()
+        )
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('fat');
+}
+
+task copyDependencies(type: Copy) {
+    from(configurations.runtimeClasspath)
+    into "${buildDir}/dependencies/flat"
+}
+assemble.dependsOn(copyDependencies)
+
+if (JavaVersion.current().isJava8Compatible()){
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+}
+
+task Main (type: JavaExec) {
+    mainClass = "eu.hansolo.clagent.Main"
+    classpath = sourceSets.main.runtimeClasspath
+}
